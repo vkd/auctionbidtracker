@@ -1,8 +1,6 @@
 package auctionbidtrackertest
 
 import (
-	"auctionbidtracker"
-	"auctionbidtracker/server"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -13,6 +11,9 @@ import (
 	"runtime/debug"
 	"strconv"
 	"testing"
+
+	"github.com/vkd/auctionbidtracker"
+	"github.com/vkd/auctionbidtracker/server"
 )
 
 type Auctioner = auctionbidtracker.Auctioner

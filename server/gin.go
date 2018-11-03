@@ -5,8 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-
-	"auctionbidtracker"
+	"github.com/vkd/auctionbidtracker"
 )
 
 // NewServer - return server handler
