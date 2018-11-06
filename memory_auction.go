@@ -2,6 +2,7 @@ package auctionbidtracker
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -94,10 +95,11 @@ func (m *MemoryAuction) AddItem(item *Item) (*Item, error) {
 	m.mx.Lock()
 	defer m.mx.Unlock()
 
-	bids, ok := m.bids[item.ID]
-	if !ok {
-		bids = &itemBids{item: item}
-		m.bids[item.ID] = bids
+	_, ok := m.bids[item.ID]
+	if ok {
+		return nil, fmt.Errorf("item already exists")
 	}
-	return bids.item, nil
+	bids := &itemBids{item: item}
+	m.bids[item.ID] = bids
+	return item, nil
 }
