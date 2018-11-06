@@ -13,6 +13,6 @@ var addr = flag.String("addr", ":8080", "Server addres")
 func main() {
 	flag.Parse()
 
-	handler := server.NewServer(auctionbidtracker.NewMemoryAuction())
+	handler := server.NewServer(auctionbidtracker.NewMemoryAuction(), false)
 	http.ListenAndServe(*addr, handler)
 }

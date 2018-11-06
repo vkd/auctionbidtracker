@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"runtime/debug"
 	"strconv"
 	"testing"
@@ -28,40 +29,44 @@ func TestAuctioner(t *testing.T) {
 		NewClientAuctioner(),
 		auctionbidtracker.NewMemoryAuction(),
 	} {
-		if a == nil {
-			t.Errorf("Auctioner is nil")
-			continue
-		}
+		tp := reflect.ValueOf(a).Elem().Type()
+		t.Run(tp.Name(), func(t *testing.T) {
 
-		item1 := addItem(t, a)
+			if a == nil {
+				t.Errorf("Auctioner is nil")
+				return
+			}
 
-		user1 := &User{ID: 1}
+			item1 := addItem(t, a)
 
-		makeBid(t, a, item1, user1, 2)
-		makeBid(t, a, item1, user1, 3)
-		checkWinning(t, a, item1, 3)
+			user1 := &User{ID: 1}
 
-		user2 := &User{ID: 2}
-		makeBid(t, a, item1, user2, 1)
-		checkWinning(t, a, item1, 3)
+			makeBid(t, a, item1, user1, 2)
+			makeBid(t, a, item1, user1, 3)
+			checkWinning(t, a, item1, 3)
 
-		makeBid(t, a, item1, user2, 4)
-		checkWinning(t, a, item1, 4)
+			user2 := &User{ID: 2}
+			makeBid(t, a, item1, user2, 1)
+			checkWinning(t, a, item1, 3)
 
-		item2 := addItem(t, a)
-		makeBid(t, a, item2, user2, 5)
-		checkWinning(t, a, item1, 4)
-		checkWinning(t, a, item2, 5)
+			makeBid(t, a, item1, user2, 4)
+			checkWinning(t, a, item1, 4)
 
-		item3 := addItem(t, a)
-		makeBid(t, a, item3, user2, 7)
+			item2 := addItem(t, a)
+			makeBid(t, a, item2, user2, 5)
+			checkWinning(t, a, item1, 4)
+			checkWinning(t, a, item2, 5)
 
-		checkAllBids(t, a, item1, []int{2, 3, 1, 4})
-		checkAllBids(t, a, item2, []int{5})
-		checkAllBids(t, a, item3, []int{7})
+			item3 := addItem(t, a)
+			makeBid(t, a, item3, user2, 7)
 
-		checkItemsByUser(t, a, user1, []*Item{item1, item2})
-		checkItemsByUser(t, a, user2, []*Item{item1, item2, item3})
+			checkAllBids(t, a, item1, []int{2, 3, 1, 4})
+			checkAllBids(t, a, item2, []int{5})
+			checkAllBids(t, a, item3, []int{7})
+
+			checkItemsByUser(t, a, user1, []*Item{item1, item2})
+			checkItemsByUser(t, a, user2, []*Item{item1, item2, item3})
+		})
 	}
 }
 
@@ -121,11 +126,9 @@ type clientAuctioner struct {
 
 func NewClientAuctioner() *clientAuctioner {
 	return &clientAuctioner{
-		handler: server.NewServer(auctionbidtracker.NewMemoryAuction()),
+		handler: server.NewServer(auctionbidtracker.NewMemoryAuction(), false),
 	}
 }
-
-// var testAddr = "http://localhost:8080"
 
 var _ Auctioner = (*clientAuctioner)(nil)
 
@@ -136,7 +139,7 @@ func (c *clientAuctioner) MakeBid(itemID ItemID, userID UserID, bid *Bid) error 
 	}
 
 	resp := httptest.NewRecorder()
-	req := httptest.NewRequest("POST", "/items/"+strconv.Itoa(itemID.Int())+"/bids?user_id="+strconv.Itoa(int(userID)), bytes.NewReader(body))
+	req := httptest.NewRequest("POST", "/items/"+strconv.Itoa(int(itemID))+"/bids?user_id="+strconv.Itoa(int(userID)), bytes.NewReader(body))
 	c.handler.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusOK {
@@ -158,7 +161,7 @@ func (c *clientAuctioner) MakeBid(itemID ItemID, userID UserID, bid *Bid) error 
 
 func (c *clientAuctioner) GetWinningBid(itemID ItemID) (*Bid, error) {
 	resp := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/items/"+strconv.Itoa(itemID.Int())+"/winning-bid", nil)
+	req := httptest.NewRequest("GET", "/items/"+strconv.Itoa(int(itemID))+"/winning-bid", nil)
 	c.handler.ServeHTTP(resp, req)
 
 	var j Bid
@@ -170,7 +173,7 @@ func (c *clientAuctioner) GetWinningBid(itemID ItemID) (*Bid, error) {
 }
 func (c *clientAuctioner) GetAllBids(itemID ItemID) ([]*Bid, error) {
 	resp := httptest.NewRecorder()
-	req := httptest.NewRequest("GET", "/items/"+strconv.Itoa(itemID.Int())+"/bids", nil)
+	req := httptest.NewRequest("GET", "/items/"+strconv.Itoa(int(itemID))+"/bids", nil)
 	c.handler.ServeHTTP(resp, req)
 
 	if resp.Code != http.StatusOK {

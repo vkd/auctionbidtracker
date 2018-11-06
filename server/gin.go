@@ -9,8 +9,15 @@ import (
 )
 
 // NewServer - return server handler
-func NewServer(a auctionbidtracker.Auctioner) http.Handler {
-	e := gin.Default()
+func NewServer(a auctionbidtracker.Auctioner, isDebug bool) http.Handler {
+	var e *gin.Engine
+	if isDebug {
+		e = gin.Default()
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+		e = gin.New()
+		e.Use(gin.Recovery())
+	}
 
 	items := e.Group("/items")
 	{
