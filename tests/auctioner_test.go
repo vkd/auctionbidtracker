@@ -28,6 +28,7 @@ func TestAuctioner(t *testing.T) {
 	for _, a := range []Auctioner{
 		NewClientAuctioner(),
 		auctionbidtracker.NewMemoryAuction(),
+		auctionbidtracker.NewFastMemoryAuction(),
 	} {
 		tp := reflect.ValueOf(a).Elem().Type()
 		t.Run(tp.Name(), func(t *testing.T) {
@@ -115,6 +116,7 @@ func checkItemsByUser(t *testing.T, a Auctioner, user *User, items []*Item) {
 
 	for i, item := range ii {
 		if item.ID != items[i].ID {
+			debug.PrintStack()
 			t.Errorf("Wrong get items by user: %v", ii)
 		}
 	}
